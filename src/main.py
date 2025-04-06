@@ -25,14 +25,6 @@ def get_element(selector):
         DOM_ELEMENTS[selector] = document.querySelector(selector)
     return DOM_ELEMENTS[selector]
 
-def toggle_element_display(selector, show=True):
-    """Helper function to show/hide DOM elements"""
-    element = get_element(selector)
-    if show:
-        element.classList.remove("is-hidden")
-    else:
-        element.classList.add("is-hidden")
-
 def highlight_selected_button(button_id):
     # Remove active class from all buttons
     get_element("#mediumButton").classList.remove("is-active")  # Changed from normalButton to mediumButton
@@ -374,11 +366,8 @@ async def preset_button_handler(event):
 
 @when("change", "#filePdf")
 async def file_change_handler(event):
-    """Handle file selection - just load the file and display info"""
+    """Handle file selection from the file input"""
     try:
-        global current_pdf, current_pdf_size
-        console.log("File selection changed")
-        
         input = event.target
         
         # Check if files were actually selected
@@ -386,72 +375,14 @@ async def file_change_handler(event):
             console.log("No files selected")
             return
         
-        # Only clean up existing files AFTER confirming a new file was selected
-        cleanup_files()
-        
-        # Clear the results table
-        get_element("tbody").innerHTML = ""
-        
-        # Clear processed files dictionary
-        processed_files.clear()
-
         # We only process the first file, even if multiple were somehow selected
-        # Use .item() method instead of indexing to access JavaScript FileList objects
         file = input.files.item(0)
-        pdf = file.name
-        console.log(f"Loading file: {pdf}")
         
-        # Validate file type
-        if not pdf.lower().endswith('.pdf'):
-            console.error("Not a PDF file")
-            show_notification("Please select a PDF file", "is-warning")
-            return
-            
-        # create a temporary URL
-        tmp = window.URL.createObjectURL(file)
-        console.log("URL created")
-        
-        # fetch and save its content somewhere
-        console.log("Fetching file content...")
-        with open(pdf, "wb") as dest:
-            dest.write(await fetch(tmp).bytearray())
-        console.log("File saved locally")
-        
-        # Track this file for cleanup
-        temp_files.append(pdf)
-        
-        # revoke the tmp URL
-        window.URL.revokeObjectURL(tmp)
-        
-        # Store current PDF filename and size
-        current_pdf = pdf
-        current_pdf_size = os.path.getsize(pdf) / 1024
-        
-        # Add the original PDF to the results table with a distinctive style
-        table = get_element("tbody")
-        
-        # Add original file as first row with a neutral style - using is-light
-        table.innerHTML = f"""<tr class="is-selected has-background-light">
-                            <td>
-                                <span class="has-text-weight-bold">{pdf}</span>
-                                <span class="tag is-info is-light ml-2">Original</span>
-                            </td>
-                            <td>
-                                <span>{current_pdf_size:,.0f} kb</span>
-                            </td>
-                            <td>
-                                <span class="has-text-grey-light">Selected file</span>
-                            </td>
-                        </tr>"""
-    
-        # Show the clear button since we have a file loaded
-        get_element("#clearButton").classList.remove("is-hidden")
-        
-        console.log(f"Original file size: {current_pdf_size:,.0f} kb")
+        # Load the PDF file using the shared helper function
+        await load_pdf_file(file)
         
     except Exception as e:
-        console.error(f"Error loading PDF: {str(e)}")
-        # Show error notification
+        console.error(f"Error in file selection handler: {str(e)}")
         show_notification(f"Error loading PDF: {str(e)}", "is-danger")
 
 # Function to reset the application state
@@ -603,20 +534,40 @@ def setup_drag_and_drop():
 # Process a dropped file directly (used as fallback)
 async def process_dropped_file(file):
     """Process a dropped file directly if setting the file input fails"""
+    console.log("Using fallback file processing method")
+    await load_pdf_file(file)
+
+async def load_pdf_file(file):
+    """
+    Process a PDF file - common functionality for both file input and drag-drop
+    
+    Args:
+        file: JavaScript File object
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
     try:
         global current_pdf, current_pdf_size
         
         # Clean up any existing files
         cleanup_files()
         
+        # Get file name
         pdf = file.name
-        console.log(f"Processing dropped file: {pdf}")
+        console.log(f"Loading file: {pdf}")
         
-        # create a temporary URL
+        # Validate file type
+        if not pdf.lower().endswith('.pdf'):
+            console.error("Not a PDF file")
+            show_notification("Please select a PDF file", "is-warning")
+            return False
+            
+        # Create a temporary URL
         tmp = window.URL.createObjectURL(file)
         console.log("URL created")
         
-        # fetch and save its content somewhere
+        # Fetch and save its content
         console.log("Fetching file content...")
         with open(pdf, "wb") as dest:
             dest.write(await fetch(tmp).bytearray())
@@ -625,7 +576,7 @@ async def process_dropped_file(file):
         # Track this file for cleanup
         temp_files.append(pdf)
         
-        # revoke the tmp URL
+        # Revoke the tmp URL
         window.URL.revokeObjectURL(tmp)
         
         # Store current PDF filename and size
@@ -654,18 +605,19 @@ async def process_dropped_file(file):
                                 <span class="has-text-grey-light">Selected file</span>
                             </td>
                         </tr>"""
-        
+    
         # Show the clear button since we have a file loaded
         get_element("#clearButton").classList.remove("is-hidden")
         
         console.log(f"Original file size: {current_pdf_size:,.0f} kb")
         
-        show_notification(f"PDF loaded: {pdf}", "is-info")
+        return True
         
     except Exception as e:
-        console.error(f"Error processing dropped file: {str(e)}")
+        console.error(f"Error loading PDF: {str(e)}")
         # Show error notification
         show_notification(f"Error loading PDF: {str(e)}", "is-danger")
+        return False
 
 # Call main after all functions are defined
 main()
