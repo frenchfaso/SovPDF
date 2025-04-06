@@ -280,6 +280,11 @@ async def process_pdf(filename, preset):
         handle_error(f"Error processing PDF: {str(e)}")
         return False
 
+# Helper function to allow UI updates
+async def sleep(ms):
+    """Sleep for the specified number of milliseconds to allow UI updates"""
+    await ffi.sleep(ms / 1000)
+
 # Centralized error handling
 def handle_error(error_message):
     """Centralized function for handling errors"""
@@ -447,6 +452,15 @@ def main():
     document.addEventListener('py-cleanup', cleanup_files)
     
     console.log("App initialized")
+    
+    # Signal that the app is fully loaded by dispatching a custom event
+    js_code = """
+    // Dispatch py-ready event to signal the app is fully loaded
+    document.dispatchEvent(new CustomEvent('py-ready'));
+    """
+    ready_script = document.createElement('script')
+    ready_script.textContent = js_code
+    document.head.appendChild(ready_script)
 
 # Setup drag and drop functionality
 def setup_drag_and_drop():
@@ -550,6 +564,13 @@ async def load_pdf_file(file):
     try:
         global current_pdf, current_pdf_size
         
+        # Check file size - limit to 100MB to prevent browser crashes
+        file_size_mb = file.size / (1024 * 1024)
+        if file_size_mb > 100:
+            console.error(f"File too large: {file_size_mb:.1f}MB")
+            show_notification(f"File too large ({file_size_mb:.1f}MB). Please select a PDF smaller than 100MB.", "is-warning")
+            return False
+            
         # Clean up any existing files
         cleanup_files()
         

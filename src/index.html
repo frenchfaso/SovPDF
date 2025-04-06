@@ -15,86 +15,134 @@
     <!-- This script tag bootstraps PyScript -->
     <script type="module" src="https://pyscript.net/releases/2025.3.1/core.js"></script>
     <title>SovPDF</title>
+    <style>
+        #app-content { 
+            display: none; 
+        }
+    </style>
 </head>
 
 <body>
-    <!-- Notification area -->
-    <div id="notification" class="notification is-info is-light is-hidden">
+    <!-- Fixed notification element that floats above content -->
+    <div id="notification" class="notification is-info is-light is-hidden has-shadow" style="position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 1000; max-width: 600px; width: 90%;">
         <button class="delete"></button>
         Message will appear here
     </div>
-
-    <section class="hero is-fullheight">
-        <div class="hero-head has-text-centered pt-5">
-            <div class="is-flex is-justify-content-center">
-                <figure class="image is-128x128">
-                    <img class="is-rounded" src="./icons/icon-256x256.png" alt="SovPDF Logo" />
-                </figure>
-            </div>
-            <h1 class="title">SovPDF</h1>
-            <h2 class="subtitle">Sovereign PDF compressor</h2>
-        </div>
+    
+    <!-- Loading overlay with Bulma components -->
+    <div id="loading-overlay" class="hero is-fullheight">
         <div class="hero-body">
             <div class="container has-text-centered">
-                <div id="dropZone" class="file is-large is-boxed is-flex is-justify-content-center">
-                    <label class="file-label" style="width: 250px; min-height: 150px;">
-                        <input class="file-input" type="file" accept=".pdf" name="resume" id="filePdf" />
-                        <span class="file-cta" style="height: 100%;">
-                            <span class="file-icon">
-                                <i class="fa fa-upload"></i>
-                            </span>
-                            <span class="file-label">Open PDF</span>
-                            <p class="has-text-centered mt-2 is-size-7">or drag & drop a file</p>
-                        </span>
-                    </label>
+                <div class="mb-5">
+                    <figure class="image is-128x128 is-inline-block">
+                        <img class="is-rounded" src="./icons/icon-256x256.png" alt="SovPDF Logo" />
+                    </figure>
                 </div>
+                <h1 class="title">SovPDF</h1>
+                <h2 class="subtitle mb-5">Sovereign PDF compressor</h2>
                 
-                <!-- Compression preset buttons -->
-                <div class="buttons is-flex is-justify-content-center mt-4">
-                    <button class="button is-danger is-light" id="mediumButton">
-                        Medium
-                    </button>
-                    <button class="button is-danger" id="smallButton">
-                        Small
-                    </button>
-                    <button class="button is-danger is-dark" id="tinyButton">
-                        Tiny
-                    </button>
+                <progress class="progress is-info" max="100"></progress>
+                
+                <p class="mt-4 has-text-grey">
+                    <span class="icon">
+                        <i class="fa fa-circle-o-notch fa-spin"></i>
+                    </span>
+                    Loading application...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- App content wrapper -->
+    <div id="app-content">
+        <section class="hero is-fullheight">
+            <div class="hero-head has-text-centered pt-5">
+                <div class="is-flex is-justify-content-center">
+                    <figure class="image is-128x128">
+                        <img class="is-rounded" src="./icons/icon-256x256.png" alt="SovPDF Logo" />
+                    </figure>
                 </div>
-                
-                <!-- Wrap table in a container for responsiveness -->
-                <div class="table-container">
-                    <table class="table is-striped is-hoverable is-fullwidth">
-                        <thead>
-                            <tr>
-                                <th>File Name</th>
-                                <th>Size</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Results will be added here -->
-                        </tbody>
-                    </table>
-                    <!-- Clear button -->
-                    <div class="is-flex is-justify-content-center mt-4">
-                        <button class="button is-info is-outlined is-hidden" id="clearButton">
-                            <span class="icon">
-                                <i class="fa fa-trash"></i>
+                <h1 class="title">SovPDF</h1>
+                <h2 class="subtitle">Sovereign PDF compressor</h2>
+            </div>
+            <div class="hero-body">
+                <div class="container has-text-centered">
+                    <div id="dropZone" class="file is-large is-boxed is-flex is-justify-content-center">
+                        <label class="file-label" style="width: 250px; min-height: 150px;">
+                            <input class="file-input" type="file" accept=".pdf" name="resume" id="filePdf" />
+                            <span class="file-cta" style="height: 100%;">
+                                <span class="file-icon">
+                                    <i class="fa fa-upload"></i>
+                                </span>
+                                <span class="file-label">Open PDF</span>
+                                <p class="has-text-centered mt-2 is-size-7">or drag & drop a file</p>
                             </span>
-                            <span>Clear</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Compression preset buttons -->
+                    <div class="buttons is-flex is-justify-content-center mt-4">
+                        <button class="button is-danger is-light" id="mediumButton">
+                            Medium
                         </button>
+                        <button class="button is-danger" id="smallButton">
+                            Small
+                        </button>
+                        <button class="button is-danger is-dark" id="tinyButton">
+                            Tiny
+                        </button>
+                    </div>
+                    
+                    <!-- Wrap table in a container for responsiveness -->
+                    <div class="table-container">
+                        <table class="table is-striped is-hoverable is-fullwidth">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Size</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Results will be added here -->
+                            </tbody>
+                        </table>
+                        <!-- Clear button -->
+                        <div class="is-flex is-justify-content-center mt-4">
+                            <button class="button is-info is-outlined is-hidden" id="clearButton">
+                                <span class="icon">
+                                    <i class="fa fa-trash"></i>
+                                </span>
+                                <span>Clear</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="hero-foot has-text-centered pb-5">
-            <h6>
-                <p id="version">v 1.1</p>
-                <p>shamelessly 'vibe coded' with ❤️ by <a href="https://www.github.com/frenchfaso">Frenchfaso</a></p>
-            </h6>
-        </div>
-    </section>
+            <div class="hero-foot has-text-centered pb-5">
+                <h6>
+                    <p id="version">v 1.1</p>
+                    <p>shamelessly 'vibe coded' with ❤️ by <a href="https://www.github.com/frenchfaso">Frenchfaso</a></p>
+                </h6>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Simple script to show the app when it's ready -->
+    <script>
+        // Listen for PyScript ready event
+        document.addEventListener('py-ready', () => {
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+        });
+        
+        // Fallback in case the event doesn't fire
+        setTimeout(() => {
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+        }, 15000); // 15 second timeout as fallback
+    </script>
+
     <!-- <script src="app.js" type="module" defer></script> -->
     <script type="py" src="main.py" config='{"packages":["pillow", "pypdf"]}' worker></script>
 </body>
